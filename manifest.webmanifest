@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "日々のたね — 習慣チェック",
-  "short_name": "日々のたね",
+  "name": "こつこつガーデン — 習慣チェック",
+  "short_name": "こつこつガーデン",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
@@ -9,7 +9,16 @@
   "background_color": "#faf7f0",
   "theme_color": "#faf7f0",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "description": "種をまき、こつこつ育て、花ひらく"
 }

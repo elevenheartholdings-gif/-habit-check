@@ -14,6 +14,7 @@
 :root{--accent-ink:var(--theme-ink,#24689c)}.primary{color:var(--selection-ink,#16324a)}.primary:hover{background:var(--theme-hover,#c5e2fa)}.textbutton,.totals,.scheduletime,.gardenMotto,.savestatus,#status{color:var(--accent-ink)}.day.selected,.targettabs button[aria-pressed="true"]{color:var(--selection-ink,#16324a)}.day.selected .dot{background:var(--accent-ink)}.habit input[type="checkbox"]:checked{background:var(--accent-ink);border-color:var(--accent-ink)}progress,.numberchoice input{accent-color:var(--accent-ink)}.habit:has(input:checked) .habitname{color:var(--accent-ink)}.savestatus.error,#status.error{color:#a04432}
 .foldcard>.noteheading>h2{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:10px;flex:1}.foldcard>.noteheading>h2:after{content:'⌃';font-size:20px;color:var(--accent-ink);margin-left:auto}.foldcard>.noteheading>h2[aria-expanded="false"]:after{content:'⌄'}.foldcard>.noteheading>h2:focus-visible{outline:3px solid var(--accent-ink);outline-offset:3px;border-radius:6px}.foldcard>.noteheading{margin-bottom:0}.themePalette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:24px 4px}.paletteColor{border-radius:50%;padding:0;aspect-ratio:1;min-height:44px;min-width:0;border:2px solid transparent;font-weight:700;font-size:23px;color:#102535}.paletteColor[aria-pressed="true"]{border-color:#102535;box-shadow:0 0 0 3px white,0 0 0 5px #102535}.paletteColor:hover{filter:brightness(.96)}@media(max-width:360px){.themePalette{gap:4px;margin:20px 0}}
 .tag{color:var(--accent-ink)}.menutoggle span{background:var(--accent-ink)}
+.categoryCalendar{border:1px solid var(--line);border-radius:14px;margin:16px 0;overflow:hidden}.categoryCalendar>summary{cursor:pointer;min-height:48px;padding:10px 12px;color:var(--accent-ink);font-weight:600;background:var(--theme-soft,#e7f3ff)}.categoryCalendarBody{padding:12px 8px}.categoryCalendarBody h3{font-size:16px;margin:0}.metricCalendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin:12px 0}.metricday{min-width:0;padding:6px 1px;min-height:82px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}.metricDate{font-size:13px;font-weight:600}.metricAmount{font-size:10px;line-height:1.4;overflow-wrap:anywhere;max-width:100%;font-variant-numeric:tabular-nums}.metricNet{font-weight:700}.expenseAmount{color:#984333}.metricday[aria-pressed="true"]{background:var(--theme-soft,#e7f3ff);border:2px solid var(--accent-ink);padding:5px 0}.metricToday .metricDate{text-decoration:underline;text-underline-offset:3px}.metricday:hover{background:var(--theme-soft,#e7f3ff)}.categoryCalendarBody>.muted{font-size:11px}
 </style></head><body><main>
 <header><div class="brand"><span class="sprout" aria-hidden="true">♧</span><span id="appNameDisplay">こつこつガーデン</span></div><div class="headeractions"><span class="tag">小さな積み重ねを、大切に。</span><button id="openMenu" class="menutoggle" aria-label="管理メニューを開く" aria-haspopup="dialog" aria-controls="mainMenu"><span></span><span></span><span></span></button></div></header>
 <section class="intro"><h1 class="gardenMotto"><span>種をまき、</span><span>こつこつ育て、</span><span>花ひらく</span></h1><p class="muted">できたことにチェックを。あなたのペースで育てていきましょう。</p></section>
@@ -31,6 +32,7 @@
 const KEY='hibi-no-tane-v1';
 const THEME_COLORS=[{"name": "レモン", "hex": "#fcfd9a"}, {"name": "クリーム", "hex": "#ffeba0"}, {"name": "アプリコット", "hex": "#ffdaa3"}, {"name": "ピーチ", "hex": "#ffc9a5"}, {"name": "コーラル", "hex": "#ffb29f"}, {"name": "サーモンピンク", "hex": "#ffadb6"}, {"name": "ローズピンク", "hex": "#f8b1c8"}, {"name": "チェリーピンク", "hex": "#f8b1d1"}, {"name": "ライラックピンク", "hex": "#edabd2"}, {"name": "モーヴ", "hex": "#dfa2cd"}, {"name": "オーキッド", "hex": "#cea0d3"}, {"name": "ラベンダー", "hex": "#b996d5"}, {"name": "パープル", "hex": "#a28ade"}, {"name": "ペリウィンクル", "hex": "#9693e5"}, {"name": "ブルーラベンダー", "hex": "#91aaeb"}, {"name": "スカイブルー", "hex": "#84b9ee"}, {"name": "ライトブルー", "hex": "#85c6f1"}, {"name": "アクアブルー", "hex": "#87d4f5"}, {"name": "ターコイズ", "hex": "#7cdbf3"}, {"name": "ミント", "hex": "#7fe0d1"}, {"name": "エメラルドミント", "hex": "#7fe4c2"}, {"name": "グリーンミント", "hex": "#8de3b2"}, {"name": "リーフ", "hex": "#ade7a5"}, {"name": "ライム", "hex": "#c9eea2"}, {"name": "レモンライム", "hex": "#e8f79a"}];
 const entryPeriods=new Map();
+const categoryCalendarMonths=new Map();
 const ENTRY_TYPES=['schedule','todo','ledger','calories'];
 const FOOD_CATEGORIES=['一般食','飲み物','菓子','外食','運動','その他'];
 
@@ -284,7 +286,7 @@ function typedCard(category){
     const deadline=category.kind==='schedule'?row.at:row.due;if(deadline)detail.append(button('カレンダー用ファイル',()=>exportReminder(row.text,deadline,row.id),'textbutton'));
     list.append(detail);
   }
-  card.append(list,form);return card;
+  if(['ledger','calories'].includes(category.kind))card.append(categoryCalendar(category));card.append(list,form);return card;
 }
 const memoRenderer=renderCustomMemos;
 renderCustomMemos=function(){memoRenderer();const list=$('customMemos');for(const category of state.memoCategories||[]){if(!ENTRY_TYPES.includes(category.kind))continue;const old=$('section-'+category.id);old.remove();list.append(typedCard(category))}renderSections()};
@@ -292,7 +294,7 @@ const categorySubmit=$('categoryForm').onsubmit;
 $('categoryForm').onsubmit=e=>{const type=$('sectionType').value;if(!ENTRY_TYPES.includes(type)){categorySubmit(e);return}e.preventDefault();const name=$('categoryName').value.trim();if(!name||name.length>60)return;if((state.memoCategories||[]).some(c=>c.name===name)){alert('同じ名前の項目があります。');return}if(!state.memoCategories)state.memoCategories=[];state.memoCategories.push({id:'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,kind:type});save();$('categoryName').value='';renderCustomMemos();manager()};
 $('sectionType').onchange=()=>{const type=$('sectionType').value,restore=BUILTIN_SECTIONS.some(b=>b.id===type);$('categoryForm').hidden=restore;$('sectionRestore').hidden=!restore;const memo=!restore&&!ENTRY_TYPES.includes(type);$('categoryNumberChoice').hidden=!memo;$('categoryNumberHelp').hidden=!memo;$('categoryWithNumber').checked=false;$('categoryWithNumber').onchange()};
 const oldDeleteCategory=deleteCategory;
-deleteCategory=function(category){if(!confirm('「'+category.name+'」と、全日付の本文・数字・明細を削除しますか？ 元に戻せません。'))return;state.memoCategories=state.memoCategories.filter(c=>c.id!==category.id);for(const d of Object.values(state.days)){if(d.categoryMemos)delete d.categoryMemos[category.id];if(d.categoryNumbers)delete d.categoryNumbers[category.id]}if(state.entries)delete state.entries[category.id];if(state.collapsedSections)delete state.collapsedSections[category.id];if(state.sectionOrder)state.sectionOrder=state.sectionOrder.filter(id=>id!==category.id);save();renderCustomMemos();renderCalendar();manager()};
+deleteCategory=function(category){if(!confirm('「'+category.name+'」と、全日付の本文・数字・明細を削除しますか？ 元に戻せません。'))return;state.memoCategories=state.memoCategories.filter(c=>c.id!==category.id);for(const d of Object.values(state.days)){if(d.categoryMemos)delete d.categoryMemos[category.id];if(d.categoryNumbers)delete d.categoryNumbers[category.id]}if(state.entries)delete state.entries[category.id];if(state.collapsedSections)delete state.collapsedSections[category.id];if(state.calendarCollapsed)delete state.calendarCollapsed[category.id];if(state.sectionOrder)state.sectionOrder=state.sectionOrder.filter(id=>id!==category.id);save();renderCustomMemos();renderCalendar();manager()};
 function habitMemo(id){const rec=record(),name=state.habits.find(h=>h.id===id)?.name||'習慣';const text=prompt(name+'のメモ（'+selected+'）',rec.habitNotes?.[id]||'');if(text===null)return;if(text.length>10000){alert('メモは10000文字以内です。');return}if(!rec.habitNotes)rec.habitNotes={};rec.habitNotes[id]=text;save();render()}
 const baseRender=render;
 render=function(){baseRender();const habits=visibleHabits(state,selected),rec=state.days[selected];habits.forEach((h,index)=>{const row=$('habits').children[index],c=row.children[0],label=row.children[1],change=c.onchange;
@@ -307,6 +309,8 @@ $('enableNotifications').onclick=async()=>{if(typeof Notification==='undefined')
 if(typeof setInterval==='function'){setInterval(checkReminders,30000);if(typeof document.addEventListener==='function')document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkReminders()})}
 
 function validPreferences(x){
+  if(x.calendarCollapsed!==undefined){if(!x.calendarCollapsed||typeof x.calendarCollapsed!=='object'||Array.isArray(x.calendarCollapsed))throw Error('カレンダー設定');for(const [id,value] of Object.entries(x.calendarCollapsed))if(!x.memoCategories?.some(c=>c.id===id&&['ledger','calories'].includes(c.kind))||typeof value!=='boolean')throw Error('カレンダー設定')}
+
   if(x.themeColor!==undefined&&!THEME_COLORS.some(c=>c.hex===x.themeColor)&&x.themeColor!=='#59a4e8')throw Error('配色');
   if(x.collapsedSections!==undefined){if(!x.collapsedSections||typeof x.collapsedSections!=='object'||Array.isArray(x.collapsedSections))throw Error('折り畳み');for(const [id,value] of Object.entries(x.collapsedSections))if(!BUILTIN_SECTIONS.some(b=>b.id===id)&&!x.memoCategories?.some(c=>c.id===id)||typeof value!=='boolean')throw Error('折り畳み')}
 }
@@ -329,6 +333,32 @@ function renderPalette(){const grid=$('themePalette');grid.replaceChildren();for
 $('menuTheme').onclick=()=>{$('mainMenu').close();renderPalette();$('themeDialog').showModal()};$('closeTheme').onclick=()=>$('themeDialog').close();
 const renderBeforeTheme=render;
 render=function(){renderBeforeTheme();applyTheme()};
+
+function categoryDayTotals(category,date){const rows=entryRows(category).filter(r=>r.at.slice(0,10)===date);return {...(category.kind==='ledger'?moneyTotals(rows):calorieTotals(rows)),recorded:rows.length>0}}
+function compactCalendarNumber(n){const abs=Math.abs(n);if(abs>=100000000)return fmt(n/100000000)+'億';if(abs>=10000)return fmt(n/10000)+'万';return fmt(n)}
+function categoryCalendar(category){
+  const detail=el('details',undefined,'categoryCalendar');detail.id='calendar-'+category.id;detail.open=!state.calendarCollapsed?.[category.id];const summary=el('summary','日別カレンダー');summary.setAttribute('aria-label',category.name+'の日別カレンダーを折り畳み・展開');detail.append(summary);
+  detail.ontoggle=()=>{const collapsed=!detail.open;if(!!state.calendarCollapsed?.[category.id]===collapsed)return;if(!state.calendarCollapsed)state.calendarCollapsed={};state.calendarCollapsed[category.id]=collapsed;save()};
+  const body=el('div',undefined,'categoryCalendarBody'),nav=el('div',undefined,'row'),shown=categoryCalendarMonths.get(category.id)||selected.slice(0,7),first=parseDate(shown+'-01');
+  const shift=n=>{const d=parseDate(shown+'-01');d.setMonth(d.getMonth()+n);const date=localDate(d);if(!validDate(date))return;categoryCalendarMonths.set(category.id,date.slice(0,7));renderCustomMemos()};
+  const previous=button('‹',()=>shift(-1)),next=button('›',()=>shift(1));previous.setAttribute('aria-label',category.name+'の前の月');next.setAttribute('aria-label',category.name+'の次の月');nav.append(previous,el('h3',first.toLocaleDateString('ja-JP',{year:'numeric',month:'long'})),next);
+  const grid=el('div',undefined,'metricCalendar');grid.setAttribute('aria-label',category.name+' '+shown+' 日別集計');for(const w of ['日','月','火','水','木','金','土'])grid.append(el('span',w,'weekday'));for(let i=0;i<first.getDay();i++)grid.append(el('span'));
+  const last=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+  for(let i=1;i<=last;i++){
+    const date=shown+'-'+String(i).padStart(2,'0'),total=categoryDayTotals(category,date),b=button('',()=>{categoryCalendarMonths.set(category.id,shown);if(category.kind==='ledger')entryPeriods.set(category.id,'day');changeDay(date);$('section-'+category.id)?.scrollIntoView?.({block:'start',behavior:'smooth'})},'metricday');b.setAttribute('data-date',date);b.setAttribute('aria-pressed',String(date===selected));b.classList.toggle('metricToday',date===localDate());b.append(el('span',String(i),'metricDate'));
+    let exact=date;
+    if(category.kind==='ledger'){
+      b.append(el('span','出 '+(total.recorded?compactCalendarNumber(total.expense):'—'),'metricAmount expenseAmount'),el('span','入 '+(total.recorded?compactCalendarNumber(total.income):'—'),'metricAmount'));
+      exact+=' 支出 '+fmt(total.expense)+'円、入金 '+fmt(total.income)+'円';
+    }else{
+      b.append(el('span','摂 '+(total.recorded?compactCalendarNumber(total.intake):'—'),'metricAmount'),el('span','消 '+(total.recorded?compactCalendarNumber(total.burn):'—'),'metricAmount'),el('span','計 '+(total.recorded?compactCalendarNumber(total.net):'—'),'metricAmount metricNet'));
+      exact+=' 摂取 '+fmt(total.intake)+'、運動消費 '+fmt(total.burn)+'、総摂取 '+fmt(total.net)+' kcal';
+    }
+    if(!total.recorded)exact+='、記録なし';b.setAttribute('aria-label',exact);b.title=exact;grid.append(b);
+  }
+  const monthRows=entryRows(category).filter(r=>r.at.startsWith(shown));const total=category.kind==='ledger'?moneyTotals(monthRows):calorieTotals(monthRows);
+  body.append(nav,grid,el('p',category.kind==='ledger'?'出＝支出、入＝入金（円）。—は未記録。日付をタップするとその日の明細を表示します。':'摂＝摂取、消＝運動消費、計＝摂取−運動消費（kcal）。—は未記録。日付をタップするとその日の明細を表示します。','muted'),el('p',category.kind==='ledger'?'表示月合計：支出 '+fmt(total.expense)+'円 ／ 入金 '+fmt(total.income)+'円':'表示月合計：'+fmt(total.intake)+' − '+fmt(total.burn)+' ＝ '+fmt(total.net)+' kcal','totals'),el('p','大きな数値は万・億で省略します。正確な値は日付選択後の合計で確認できます。','muted'));detail.append(body);return detail;
+}
 
 render();
 checkReminders();

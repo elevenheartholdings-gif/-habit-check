@@ -108,7 +108,7 @@ function moveHabit(id,direction){
   const movedPosition=target,canRepeat=direction===-1?movedPosition>0:movedPosition<active.length-1;
   $('move-'+(canRepeat?direction:-direction)+'-'+id)?.focus?.();
 }
-function openManager(mode='all',target='habit'){
+function openManager(mode='all',target='memo'){
   managerMode=mode;managerTarget=target;$('mainMenu').close();manager();$('manager').showModal();
 }
 function renameCategory(category){
@@ -174,7 +174,7 @@ function renderSchedules(){
 }
 $('todayMemo').oninput=()=>{record().todayMemo=$('todayMemo').value;save();renderCalendar()};
 $('scheduleForm').onsubmit=e=>{e.preventDefault();const title=$('scheduleTitle').value.trim(),time=$('scheduleTime').value;if(!title||title.length>120||!validTime(time))return;const r=record();if(!r.schedules)r.schedules=[];r.schedules.push({id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),title,time});save();$('scheduleTitle').value='';$('scheduleTime').value='';renderSchedules();renderCalendar()};
-$('memo').oninput=()=>{record().memo=$('memo').value;save();renderCalendar()};$('manage').onclick=()=>openManager();$('closeManager').onclick=()=>$('manager').close();
+$('memo').oninput=()=>{record().memo=$('memo').value;save();renderCalendar()};$('manage').onclick=()=>openManager('all','habit');$('closeManager').onclick=()=>$('manager').close();
 $('addForm').onsubmit=e=>{e.preventDefault();const name=$('newName').value.trim();if(!name||name.length>60)return;state.habits.push({id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,created:localDate(),deleted:null});$('newName').value='';save();manager();render()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`こつこつガーデン-${localDate()}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);message('バックアップを作成しました。ダウンロード先を確認してください。')};
 $('import').onclick=()=>$('file').click();$('file').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5000000)throw Error('サイズ');const data=applyBranding(validate(JSON.parse(await file.text())));if(!confirm('現在のすべての記録を、バックアップの内容で置き換えます。復元しますか？'))return;localStorage.setItem(KEY,JSON.stringify(data));state=data;storageBlocked=false;render();message('バックアップを復元しました。')}catch(err){message('復元できませんでした。正しいバックアップファイルと保存容量を確認してください。現在の記録は変更していません。',true)}finally{e.target.value=''}};

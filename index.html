@@ -15,6 +15,7 @@
 .foldcard>.noteheading>h2{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:10px;flex:1}.foldcard>.noteheading>h2:before{content:'▼';font-size:12px;color:var(--accent-ink);flex-shrink:0}.foldcard>.noteheading>h2[aria-expanded="false"]:before{content:'▶'}.foldcard>.noteheading>h2:focus-visible{outline:3px solid var(--accent-ink);outline-offset:3px;border-radius:6px}.foldcard>.noteheading{margin-bottom:0}.themePalette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:24px 4px}.paletteColor{border-radius:50%;padding:0;aspect-ratio:1;min-height:44px;min-width:0;border:2px solid transparent;font-weight:700;font-size:23px;color:#102535}.paletteColor[aria-pressed="true"]{border-color:#102535;box-shadow:0 0 0 3px white,0 0 0 5px #102535}.paletteColor:hover{filter:brightness(.96)}@media(max-width:360px){.themePalette{gap:4px;margin:20px 0}}
 .tag{color:var(--accent-ink)}.menutoggle span{background:var(--accent-ink)}
 .categoryCalendar{border:1px solid var(--line);border-radius:14px;margin:16px 0;overflow:hidden}.categoryCalendar>summary{cursor:pointer;min-height:48px;padding:10px 12px;color:var(--accent-ink);font-weight:600;background:var(--theme-soft,#e7f3ff)}.categoryCalendarBody{padding:12px 8px}.categoryCalendarBody h3{font-size:16px;margin:0}.metricCalendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin:12px 0}.metricday{min-width:0;padding:6px 1px;min-height:82px;border:1px solid var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}.metricDate{font-size:13px;font-weight:600}.metricAmount{font-size:10px;line-height:1.4;overflow-wrap:anywhere;max-width:100%;font-variant-numeric:tabular-nums}.metricNet{font-weight:700}.expenseAmount{color:#984333}.metricday[aria-pressed="true"]{background:var(--theme-soft,#e7f3ff);border:2px solid var(--accent-ink);padding:5px 0}.metricToday .metricDate{text-decoration:underline;text-underline-offset:3px}.metricday:hover{background:var(--theme-soft,#e7f3ff)}.categoryCalendarBody>.muted{font-size:11px}
+.foodLibrary{background:var(--theme-soft,#e7f3ff);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}.foodLibrary h3{font-size:15px;margin:0}.searchLink{display:block;padding:10px 12px;border:1px solid var(--accent-ink);border-radius:10px;color:var(--accent-ink);text-decoration:none;background:var(--paper);font-size:14px;min-height:44px}.foodLibraryStatus{font-size:13px;margin:0;overflow-wrap:anywhere}.foodLibraryStatus.error{color:#a04432}
 </style></head><body><main>
 <header><div class="brand"><span class="sprout" aria-hidden="true">♧</span><span id="appNameDisplay">こつこつガーデン</span></div><div class="headeractions"><span class="tag">小さな積み重ねを、大切に。</span><button id="openMenu" class="menutoggle" aria-label="管理メニューを開く" aria-haspopup="dialog" aria-controls="mainMenu"><span></span><span></span><span></span></button></div></header>
 <section class="intro"><h1 class="gardenMotto"><span>種をまき、</span><span>こつこつ育て、</span><span>花ひらく</span></h1><p class="muted">できたことにチェックを。あなたのペースで育てていきましょう。</p></section>
@@ -54,7 +55,7 @@ function message(t,error=false){for(const id of ['status','managerStatus','nameS
 try{const raw=localStorage.getItem(KEY);if(raw)state=applyBranding(validate(JSON.parse(raw)))}catch(e){storageBlocked=true;message('保存データを読み込めませんでした。元のデータを保護するため保存を停止しています。バックアップから復元してください。',true)}
 function save(){if(storageBlocked){message('保存は停止中です。バックアップから復元してください。',true);return false}try{localStorage.setItem(KEY,JSON.stringify(state));message('このブラウザに保存しました。');return true}catch(e){message('保存できませんでした。空き容量やSafariの設定を確認し、バックアップを保存してください。',true);return false}}
 function record(){return state.days[selected]||(state.days[selected]={checked:[],memo:''})}
-function button(text,action,cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=action;return b}
+function button(text,action,cls=''){const b=document.createElement('button');b.type='button';b.textContent=text;b.className=cls;b.onclick=action;return b}
 function changeDay(s){if(!validDate(s))return;selected=s;month=s.slice(0,7);$('scheduleTime').value='';$('scheduleTitle').value='';render()}
 function shiftDay(n){let d=parseDate(selected);d.setDate(d.getDate()+n);const s=localDate(d);if(validDate(s))changeDay(s)}
 function render(){ $('date').value=selected;$('dayTitle').textContent=parseDate(selected).toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});const hs=visibleHabits(state,selected),r=state.days[selected]||{checked:[],memo:''};const done=hs.filter(h=>r.checked.includes(h.id)).length;$('count').textContent=`${hs.length}個の習慣のうち、${done}個できました`;$('progress').max=hs.length||1;$('progress').value=done;$('habits').replaceChildren();if(!hs.length){const p=document.createElement('p');p.className='empty';p.textContent='この日の習慣はありません。習慣を追加してみましょう。';$('habits').append(p)}for(const h of hs){const l=document.createElement('div');l.className='habit';const c=document.createElement('input');c.type='checkbox';c.id='check-'+h.id;c.setAttribute('aria-label',h.name);c.checked=r.checked.includes(h.id);c.onchange=()=>{const rec=record();rec.checked=rec.checked.filter(id=>id!==h.id);if(c.checked)rec.checked.push(h.id);save();render()};const s=document.createElement('label');s.className='habitname';s.setAttribute('for',c.id);s.textContent=h.name;l.append(c,s);$('habits').append(l)}$('memo').value=r.memo;$('todayMemo').value=r.todayMemo||'';renderSchedules();renderCustomMemos();renderAppName();renderCalendar()}
@@ -192,7 +193,7 @@ $('import').onclick=()=>$('file').click();$('file').onchange=async e=>{const fil
 function validLocalDateTime(s){return typeof s==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)&&validDate(s.slice(0,10))&&validTime(s.slice(11))}
 function finiteNumber(v,max=1e12){return typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=max}
 function validate(x){
-  validateBase(x);validPreferences(x);
+  validateBase(x);validPreferences(x);if(x.foodLibrary!==undefined){if(!Array.isArray(x.foodLibrary))throw Error('食材');const foodIds=new Set(),foodNames=new Set();for(const f of x.foodLibrary){if(!f||typeof f.id!=='string'||!/^f[-\w]+$/.test(f.id)||foodIds.has(f.id)||typeof f.name!=='string'||!f.name.trim()||f.name.length>120||foodNames.has(f.name)||!finiteNumber(f.density)||f.density<0)throw Error('食材');foodIds.add(f.id);foodNames.add(f.name)}}
   for(const c of x.memoCategories||[])if(c.kind!==undefined&&!['memo',...ENTRY_TYPES].includes(c.kind))throw Error('項目タイプ');
   if(x.entries!==undefined){if(!x.entries||typeof x.entries!=='object'||Array.isArray(x.entries))throw Error('明細');
     for(const [cid,rows] of Object.entries(x.entries)){const cat=x.memoCategories?.find(c=>c.id===cid);if(!cat||!ENTRY_TYPES.includes(cat.kind)||!Array.isArray(rows))throw Error('明細');const ids=new Set();
@@ -246,7 +247,7 @@ function typedCard(category){
     const matrix=el('div',undefined,'matrix');for(const [important,urgent,title] of [[true,true,'重要・緊急'],[true,false,'重要・緊急度低'],[false,true,'重要度低・緊急'],[false,false,'重要度低・緊急度低']]){const cell=el('section');cell.append(el('h3',title));const tasks=allTodos().filter(t=>!t.done&&t.important===important&&t.urgent===urgent);cell.append(el('p',tasks.length?tasks.map(t=>t.text+'（'+t.categoryName+'）').join('\n'):'なし'));matrix.append(cell)}card.append(el('p','全ToDoリストの未完了タスク：重要度 × 緊急度','muted'),matrix);
   }
   const form=el('form',undefined,'entryform');let at;
-  let flow,food,text,amount,payee,quantity,density,kcal,due,urgent,important;
+  let flow,food,text,amount,payee,quantity,density,kcal,due,urgent,important,foodTools;
   if(category.kind==='ledger')flow=selectField(form,'支出／入金',[['expense','支出'],['income','入金']],'expense');
   at=field(form,'日時','datetime-local',localStamp(),true);
   if(category.kind==='calories')food=selectField(form,'カテゴリ',FOOD_CATEGORIES.map(c=>[c,c]),'一般食');
@@ -256,12 +257,12 @@ function typedCard(category){
     quantity=field(form,'g数（運動はmin）','number','');density=field(form,'Kcal/100g','number','');kcal=field(form,'Kcal（計算後も編集できます）','number','',true);kcal.min='-1000000000000';
     const recalc=()=>{if(food.value!=='運動'&&quantity.value!==''&&density.value!==''){const q=Number(quantity.value),d=Number(density.value);if(Number.isFinite(q)&&q>=0&&Number.isFinite(d)&&d>=0)kcal.value=String(Math.round(q*d/100*100)/100)}};
     quantity.oninput=recalc;density.oninput=recalc;food.onchange=()=>{const exercise=food.value==='運動';density.disabled=exercise;if(density.parentElement)density.parentElement.hidden=exercise;if(exercise){density.value='';if(kcal.value!=='')kcal.value=String(-Math.abs(Number(kcal.value)))}else if(kcal.value!=='')kcal.value=String(Math.abs(Number(kcal.value)));recalc()};
-    form.append(el('p','食品：g × Kcal/100g ÷ 100。運動：minと消費Kcalを入力（消費はマイナスで保存）。','muted'));
+    form.append(el('p','食品：g × Kcal/100g ÷ 100。運動：minと消費Kcalを入力（消費はマイナスで保存）。','muted'));foodTools=addFoodLibrary(form,food,text,quantity,density,kcal);
   }
   if(category.kind==='todo'){due=field(form,'締切（任意）','datetime-local','');urgent=checkField(form,'緊急度：高い');important=checkField(form,'重要度：高い')}
   const noteBox=el('label','メモ'),note=el('textarea');note.maxLength=10000;noteBox.append(note);form.append(noteBox);
-  const submit=el('button','登録','primary');submit.type='submit';const cancel=button('編集をやめる',()=>{editing=null;form.reset?.();at.value=localStamp();submit.textContent='登録';cancel.hidden=true});cancel.hidden=true;form.append(submit,cancel);
-  function edit(row){editing=row;at.value=row.at;text.value=row.text;note.value=row.note;if(flow)flow.value=row.flow;if(amount)amount.value=String(row.amount);if(payee)payee.value=row.payee;if(food){food.value=row.food;quantity.value=String(row.quantity);density.disabled=row.food==='運動';if(density.parentElement)density.parentElement.hidden=row.food==='運動';density.value=row.density===null?'':String(row.density);kcal.value=String(row.kcal)}if(due){due.value=row.due;urgent.checked=row.urgent;important.checked=row.important}submit.textContent='変更を保存';cancel.hidden=false;form.scrollIntoView?.({behavior:'smooth',block:'nearest'})}
+  const submit=el('button','登録','primary');submit.type='submit';const cancel=button('編集をやめる',()=>{editing=null;form.reset?.();at.value=localStamp();submit.textContent='登録';cancel.hidden=true;if(food){food.value='一般食';quantity.value='';density.value='';density.disabled=false;if(density.parentElement)density.parentElement.hidden=false;kcal.value='';foodTools?.reset()}});cancel.hidden=true;form.append(submit,cancel);
+  function edit(row){editing=row;at.value=row.at;text.value=row.text;note.value=row.note;if(flow)flow.value=row.flow;if(amount)amount.value=String(row.amount);if(payee)payee.value=row.payee;if(food){food.value=row.food;quantity.value=String(row.quantity);density.disabled=row.food==='運動';if(density.parentElement)density.parentElement.hidden=row.food==='運動';density.value=row.density===null?'':String(row.density);kcal.value=String(row.kcal);foodTools?.sync()}if(due){due.value=row.due;urgent.checked=row.urgent;important.checked=row.important}submit.textContent='変更を保存';cancel.hidden=false;form.scrollIntoView?.({behavior:'smooth',block:'nearest'})}
   form.onsubmit=e=>{e.preventDefault();if(!validLocalDateTime(at.value)||text.value.length>1000||note.value.length>10000||category.kind!=='calories'&&!text.value.trim()){message('日時と内容を確認してください。',true);return}
     const row={id:editing?.id||'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),at:at.value,text:text.value.trim(),note:note.value};
     if(flow){const n=Number(amount.value);if(amount.value===''||!finiteNumber(n)||n<0||!Number.isInteger(n)||payee.value.length>300){message('金額は0以上の整数で入力してください。',true);return}Object.assign(row,{flow:flow.value,amount:n,payee:payee.value})}
@@ -358,6 +359,28 @@ function categoryCalendar(category){
   }
   const monthRows=entryRows(category).filter(r=>r.at.startsWith(shown));const total=category.kind==='ledger'?moneyTotals(monthRows):calorieTotals(monthRows);
   body.append(nav,grid,el('p',category.kind==='ledger'?'出＝支出、入＝入金（円）。—は未記録。日付をタップするとその日の明細を表示します。':'摂＝摂取、消＝運動消費、計＝摂取−運動消費（kcal）。—は未記録。日付をタップするとその日の明細を表示します。','muted'),el('p',category.kind==='ledger'?'表示月合計：支出 '+fmt(total.expense)+'円 ／ 入金 '+fmt(total.income)+'円':'表示月合計：'+fmt(total.intake)+' − '+fmt(total.burn)+' ＝ '+fmt(total.net)+' kcal','totals'),el('p','大きな数値は万・億で省略します。正確な値は日付選択後の合計で確認できます。','muted'));detail.append(body);return detail;
+}
+
+function foodSearchURL(name){return 'https://www.google.com/search?q='+encodeURIComponent(name.trim()+' 100g あたり カロリー kcal')}
+function addFoodLibrary(form,food,text,quantity,density,kcal){
+  const box=el('div',undefined,'foodLibrary');box.append(el('h3','食材カロリー検索・保存'));
+  const search=field(box,'食材名で検索','text','');search.maxLength=120;search.placeholder='例：炊いた白米';
+  const google=el('a','Googleで100gあたりのカロリーを検索','searchLink');google.href='https://www.google.com/';google.target='_blank';google.rel='noopener noreferrer';
+  const status=el('p','', 'foodLibraryStatus');status.setAttribute('role','status');
+  const show=(messageText,error=false)=>{status.textContent=messageText;status.classList.toggle('error',error)};
+  google.onclick=e=>{const name=(search.value||text.value).trim();if(!name||name.length>120){e.preventDefault();show('食材名を1〜120文字で入力してください。',true);return}google.href=foodSearchURL(name)};
+  box.append(google,el('p','検索結果を確認し、下のKcal/100gへ入力してください。生・調理後・商品名などで値が変わります。Googleからの自動取得は行いません。','muted'));
+  const saved=selectField(box,'保存した食材',[['','食材を選択']],'');
+  function refresh(){const selected=saved.value;saved.replaceChildren();const placeholder=el('option','食材を選択');placeholder.value='';saved.append(placeholder);for(const item of state.foodLibrary||[]){const option=el('option',item.name+' ／ '+fmt(item.density)+' kcal/100g');option.value=item.id;saved.append(option)}saved.value=(state.foodLibrary||[]).some(item=>item.id===selected)?selected:''}
+  saved.onfocus=refresh;
+  saved.onchange=()=>{const item=state.foodLibrary?.find(f=>f.id===saved.value);if(!item)return;search.value=item.name;text.value=item.name;density.value=String(item.density);if(quantity.value==='')kcal.value='';density.oninput();show(item.name+'の値を入力しました。g数を入れるとKcalを計算できます。')};
+  const saveButton=button('食材とKcal/100gを保存',()=>{const name=(search.value||text.value).trim(),value=Number(density.value);if(!name||name.length>120||density.value===''||!finiteNumber(value)||value<0||food.value==='運動'){show('食材名と、0以上のKcal/100gを入力してください。',true);return}if(!state.foodLibrary)state.foodLibrary=[];const old=state.foodLibrary.find(f=>f.name===name);if(old&&old.density!==value&&!confirm('「'+name+'」の保存値を更新しますか？ 登録済みの食事記録は変わりません。'))return;
+    if(old)old.density=value;else state.foodLibrary.push({id:'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,8),name,density:value});if(!text.value.trim())text.value=name;
+    if(!save()){show('保存できませんでした。保存容量や設定を確認してください。',true);return}refresh();saved.value=state.foodLibrary.find(f=>f.name===name).id;show('「'+name+'」をこの端末に保存しました。')});
+  const deleteButton=button('選んだ食材を削除',()=>{const item=state.foodLibrary?.find(f=>f.id===saved.value);if(!item){show('削除する食材を選んでください。',true);return}if(!confirm('保存した食材「'+item.name+'」を削除しますか？ 登録済みの食事記録は残ります。'))return;state.foodLibrary=state.foodLibrary.filter(f=>f.id!==item.id);save();refresh();show('保存した食材を削除しました。')},'textbutton danger');
+  box.append(saveButton,deleteButton,status);refresh();if(typeof form.insertBefore==='function'&&quantity.parentElement)form.insertBefore(box,quantity.parentElement);else form.append(box);
+  const sync=()=>{box.hidden=food.value==='運動'};const foodChange=food.onchange;food.onchange=()=>{foodChange();sync()};sync();
+  return {sync,reset:()=>{search.value='';saved.value='';status.textContent='';sync()}};
 }
 
 render();

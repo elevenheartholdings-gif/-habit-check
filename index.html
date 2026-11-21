@@ -29,6 +29,8 @@
 .metricEnergy,.metricKcalUnit{color:#c62935}.metricKcalUnit{font-size:9px;line-height:1.2}.calorieDay{gap:3px;min-height:88px}.calorieDailyTable{width:100%;border-collapse:separate;border-spacing:0;background:var(--theme-soft,#e7f3ff);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0 18px;font-size:14px;line-height:1.8}.calorieDailyTable th,.calorieDailyTable td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}.calorieDailyTable th{font-weight:600}.calorieDailyTable tr:last-child th,.calorieDailyTable tr:last-child td{border-bottom:0}.calorieDailyTable td{overflow-wrap:anywhere}.calorieDailyTable tr:last-child td{text-align:right;white-space:nowrap}
 .menuoptions #menuReorder,.menuoptions #menuRename{display:flex;align-items:center;gap:12px}.menuActionIcon{display:inline-flex;align-items:center;justify-content:center;width:30px;flex:0 0 30px;line-height:1;color:var(--accent-ink)}.menuActionIcon.reorderIcon{font-size:29px}.menuActionIcon.renameIcon{font-size:27px}
 .jumpToggle{font-size:38px;line-height:1;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI Symbol",sans-serif}.itemIconGlyph{font-size:23px;line-height:1.2;flex-shrink:0}.itemIconName{min-width:0;overflow-wrap:anywhere}.habitname.habitWithIcon{display:inline-flex;align-items:center;gap:8px}.itemIconPalette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:16px 0}.itemIconChoice{font-size:28px;padding:5px 2px;min-height:48px;border:1px solid var(--line);border-radius:12px}.itemIconChoice[aria-pressed="true"]{border:2px solid var(--accent-ink);background:var(--theme-soft,#e7f3ff)}.iconNone{font-size:13px}#itemIconStatus{font-size:13px;color:var(--accent-ink)}
+
+.memoFullToggle{display:block;margin:6px 0 10px auto;font-size:14px;min-height:44px}.memoExpanded{resize:none!important;overflow-y:hidden!important;max-height:none!important}
 </style></head><body><main>
 <header><div class="brand"><span class="sprout" aria-hidden="true">♧</span><span id="appNameDisplay">こつこつガーデン</span></div><div class="headeractions"><span class="tag">小さな積み重ねを、大切に。</span><button id="jumpBlocks" class="menutoggle jumpToggle" aria-label="ブロックへ移動" aria-haspopup="dialog" aria-controls="jumpDialog">↕︎</button><button id="openMenu" class="menutoggle" aria-label="管理メニューを開く" aria-haspopup="dialog" aria-controls="mainMenu"><span></span><span></span><span></span></button></div></header>
 <section class="intro"><h1 class="gardenMotto"><span>種をまき、</span><span>こつこつ育て、</span><span>花ひらく</span></h1><p class="muted">できたことにチェックを。あなたのペースで育てていきましょう。</p></section>
@@ -520,6 +522,31 @@ render=function(){renderBeforeItemIcons();visibleHabits(state,selected).forEach(
 function renderItemIconTargets(){const select=$('itemIconTarget'),previous=select.value,habits=$('itemIconKind').value==='habit';const targets=habits?state.habits.filter(h=>!h.deleted).map(h=>({value:'habit:'+h.id,name:h.name})):layoutBlocks().map(b=>({value:'block:'+b.id,name:b.name}));select.replaceChildren();for(const t of targets){const option=el('option',t.name);option.value=t.value;select.append(option)}select.value=targets.some(t=>t.value===previous)?previous:(targets[0]?.value||'');renderItemIconPalette()}
 function renderItemIconPalette(){const grid=$('itemIconPalette'),key=$('itemIconTarget').value,genre=$('itemIconGenre').value||'all',chosen=itemIcon(key);grid.replaceChildren();const none=button('なし',()=>setItemIcon(key,''),'itemIconChoice iconNone');none.setAttribute('aria-pressed',String(!chosen));none.disabled=!key;grid.append(none);for(const icon of ITEM_ICON_CHOICES.filter(c=>genre==='all'||c.genre===genre)){const b=button(icon.glyph,()=>setItemIcon(key,icon.glyph),'itemIconChoice');b.setAttribute('aria-label',icon.name);b.setAttribute('aria-pressed',String(chosen===icon.glyph));b.title=icon.name;b.disabled=!key;grid.append(b)}}
 $('menuItemIcons').onclick=()=>{$('mainMenu').close();if(!$('itemIconKind').value)$('itemIconKind').value='block';if(!$('itemIconGenre').value)$('itemIconGenre').value='all';renderItemIconTargets();$('itemIconStatus').textContent='';$('itemIconDialog').showModal()};$('closeItemIcons').onclick=()=>$('itemIconDialog').close();$('itemIconKind').onchange=renderItemIconTargets;$('itemIconTarget').onchange=renderItemIconPalette;$('itemIconGenre').onchange=renderItemIconPalette;
+
+
+// Expand editable memo fields in place without changing saved records.
+function resizeFullMemo(area){if(!area._memoExpanded)return;area.style.height='auto';area.style.height=Math.max(140,area.scrollHeight+4)+'px'}
+function attachFullMemo(area){
+  if(area._memoFullToggle)return;
+  const toggle=button('全体表示',()=>{
+    area._memoExpanded=!area._memoExpanded;
+    area.classList.toggle('memoExpanded',area._memoExpanded);
+    toggle.textContent=area._memoExpanded?'元の大きさ':'全体表示';
+    toggle.setAttribute('aria-expanded',String(area._memoExpanded));
+    if(area._memoExpanded){area._memoOriginalHeight=area.style.height;resizeFullMemo(area)}
+    else area.style.height=area._memoOriginalHeight||'';
+  },'memoFullToggle');
+  toggle.setAttribute('aria-expanded','false');
+  toggle.setAttribute('aria-label',(area.getAttribute('aria-label')||'メモ')+'の全体表示を切り替える');
+  area.insertAdjacentElement('afterend',toggle);area._memoFullToggle=toggle;
+  area.addEventListener('input',()=>resizeFullMemo(area));
+}
+function enhanceMemoFields(){for(const area of document.querySelectorAll?.('textarea')||[]){attachFullMemo(area);resizeFullMemo(area)}}
+const sectionsBeforeFullMemo=renderSections;
+renderSections=function(){sectionsBeforeFullMemo();enhanceMemoFields()};
+const renderBeforeFullMemo=render;
+render=function(){renderBeforeFullMemo();enhanceMemoFields()};
+if(typeof window!=='undefined')window.addEventListener('resize',enhanceMemoFields);
 
 render();
 checkReminders();

@@ -1,5 +1,5 @@
 'use strict';
-const CACHE = 'hibi-no-tane-shell-v31';
+const CACHE = 'hibi-no-tane-shell-v32';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
